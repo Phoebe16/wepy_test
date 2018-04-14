@@ -1,0 +1,173 @@
+<style lang="less">
+.userinfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.userinfo-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+}
+
+.userinfo-nickname {
+  color: #aaa;
+}
+</style>
+<template>
+  <view>
+    <view @tap="showSelectArea">点击显示选择城市</view>
+    <view @tap="hideSelectArea">点击隐藏选择城市</view>
+    <view wx:if="{{show}}">
+      <view>{{province}}-{{city}}-{{district}}</view>
+      <picker-view indicator-style="height: 50px;" style="width: 100%; height: 300px;" value="{{value}}" bindchange="bindChange">
+        <picker-view-column>
+          <view wx:for="{{provinceList}}" wx:key="index" style="line-height: 50px">{{item}}</view>
+        </picker-view-column>
+        <picker-view-column>
+          <view wx:for="{{cityList}}" wx:key="index" style="line-height: 50px">{{item}}</view>
+        </picker-view-column>
+        <picker-view-column>
+          <view wx:for="{{districtList}}" wx:key="index" style="line-height: 50px">{{item}}</view>
+        </picker-view-column>
+      </picker-view>
+
+      <!--<view class="section__title">省市区选择器</view>
+        <picker mode="region" bindchange="bindRegionChange" value="{{region}}" custom-item="{{customItem}}">
+          <view class="picker">
+            当前选择：{{region[0]}}，{{region[1]}}，{{region[2]}}
+          </view>
+        </picker>
+      </view>-->
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import testMixin from '../../mixins/test'
+import { area } from './area'
+console.log(area)
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: '选择城市'
+  }
+  components = {
+  }
+  mixins = [testMixin]
+  data = {
+    show: false,
+    area: [],
+    provinceList: [],
+    cityList: [],
+    districtList: [],
+    // provinceInex: 0,
+    // cityIndex: 0,
+    // districtIndex: 0,
+    province: '',
+    city: '',
+    district: '',
+    value: [0, 0, 0]
+    // region: ['广东省', '广州市', '海珠区'],
+    // customItem: '请选择'
+  }
+  computed = {
+  }
+  methods = {
+    showSelectArea() {
+      this.show = true
+      this.$apply()
+    },
+    hideSelectArea() {
+      this.show = false
+      this.$apply()
+    },
+    bindChange(e) {
+      const val = e.detail.value
+      console.log(this.value, val)
+      if (val[0] !== this.value[0]) {
+        this.value = [val[0], 0, 0]
+        this.province = this.getName('province', val[0])
+        this.city = this.getName('city', val[0], 0)
+        this.district = this.getName('district', val[0], 0, 0)
+        this.cityList = this.getList('city', val[0])
+        this.districtList = this.getList('district', val[0], 0, 0)
+      } else if (val[1] !== this.value[1]) {
+        this.value = [this.value[0], val[1], 0]
+        this.city = this.getName('city', this.value[0], val[1])
+        this.district = this.getName('district', this.value[0], val[1], 0)
+        this.districtList = this.getList('district', this.value[0], val[1], 0)
+      } else if (val[2] !== this.value[2]) {
+        this.value = [this.value[0], this.value[1], val[2]]
+        this.district = this.getName('district', this.value[0], this.value[1], val[2])
+      }
+      this.$apply()
+    }
+    // bindRegionChange: function (e) {
+    //   console.log('picker发送选择改变，携带值为', e.detail.value)
+    //   this.region = e.detail.value
+    //   this.$apply()
+    // }
+  }
+  events = {
+  }
+  onLoad() {
+    area.unshift({
+      'name': '请选择',
+      'city': []
+    })
+    area.forEach(item => {
+      item.city.unshift({
+        'name': '请选择',
+        'area': []
+      })
+      item.city.forEach(city => {
+        city.area.unshift('请选择')
+      })
+    })
+    this.area = area
+    this.provinceList = this.getList('province')
+    this.cityList = this.getList('city', this.value[0])
+    this.districtList = this.getList('district', this.value[0], this.value[1])
+    this.$apply()
+  }
+  getList(type, provinceIndex, cityIndex, districtIndex) {
+    const { area } = this
+    let list = []
+    switch (type) {
+      case 'province':
+        area.forEach(item => list.push(item.name))
+        break
+      case 'city':
+        area[provinceIndex].city.forEach(item => list.push(item.name))
+        // if (list[0] !== '请选择') list.unshift('请选择')
+        break
+      case 'district':
+        list = area[provinceIndex].city[cityIndex].area
+        // if (list[0] !== '请选择') list.unshift('请选择')
+        break
+    }
+    return list
+  }
+  getName(type, provinceIndex, cityIndex, districtIndex) {
+    // provinceIndex = provinceIndex - 1
+    // cityIndex = cityIndex - 1
+    // districtIndex = districtIndex - 1
+    const { area } = this
+    let name = ''
+    switch (type) {
+      case 'province':
+        name = area[provinceIndex].name
+        break
+      case 'city':
+        name = area[provinceIndex].city[cityIndex].name
+        break
+      case 'district':
+        name = area[provinceIndex].city[cityIndex].area[districtIndex]
+        break
+    }
+    return name
+  }
+}
+</script>
